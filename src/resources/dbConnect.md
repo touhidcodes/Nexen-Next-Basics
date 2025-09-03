@@ -1,4 +1,21 @@
-// lib/mongodb.ts
+# MongoDB + Next.js + TypeScript
+
+This guide shows how to connect **MongoDB** to a **Next.js project** with **TypeScript** using the official MongoDB driver.
+
+---
+
+## Install Dependencies
+
+```bash
+npm install mongodb
+npm install --save-dev @types/mongodb
+```
+
+## Setup MongoDB Connection Helper
+
+#### 1. Create a file: `lib/mongodb.ts`
+
+```bash
 import { MongoClient } from "mongodb";
 
 const uri = process.env.MONGODB_URI as string;
@@ -28,3 +45,11 @@ if (process.env.NODE_ENV === "development") {
 }
 
 export default clientPromise;
+```
+
+#### 2. Add MongoDB URI in `.env`
+
+```bash
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/myDatabase
+
+```
