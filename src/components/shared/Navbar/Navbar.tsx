@@ -54,13 +54,12 @@ export const Navbar = ({
   menu = [
     { title: "Home", url: "/" },
     { title: "ToDos", url: "/todos" },
-    { title: "Add", url: "/todos/create" }, // will be conditionally rendered
-    { title: "Pricing", url: "/pricing" },
+    { title: "Add", url: "/todos/create" },
   ],
   auth = {
     login: { title: "Login", url: "/login" },
     signup: { title: "Sign up", url: "/signup" },
-    logout: { title: "Logout", url: "/login" }, // after logout push to login
+    logout: { title: "Logout", url: "/login" },
   },
 }: NavbarProps) => {
   const pathname = usePathname();
