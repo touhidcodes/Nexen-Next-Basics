@@ -1,46 +1,16 @@
-// import Link from "next/link";
-
-// type Todo = {
-//   id: number;
-//   title: string;
-//   completed: boolean;
-// };
-
-// type Props = {
-//   todos: Todo[];
-// };
-
-// export default function TodoList({ todos }: Props) {
-//   return (
-//     <div>
-//       <h1>Todo List (Static Props)</h1>
-//       <ul>
-//         {todos.map((todo) => (
-//           <li key={todo.id}>
-//             <Link href={`/todos/${todo.id}`}>{todo.title}</Link>
-//           </li>
-//         ))}
-//       </ul>
-//     </div>
-//   );
-// }
-
-// // Fetch data at build time
-// export async function getStaticProps() {
-//   const res = await fetch(
-//     "https://jsonplaceholder.typicode.com/todos?_limit=10"
-//   );
-//   const todos: Todo[] = await res.json();
-
-//   return {
-//     props: { todos },
-//     revalidate: 10, // optional: ISR, re-build every 10s
-//   };
-// }
-
 "use client";
 
 import { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  Calendar,
+  Trash2,
+} from "lucide-react";
+import { TodoSkeleton } from "@/components/skeletons/TodoSkeleton";
 
 type Todo = {
   _id: string;
@@ -50,58 +20,211 @@ type Todo = {
   createdAt: string;
 };
 
+const priorityConfig = {
+  high: { color: "bg-red-100 text-red-800 border-red-200", icon: AlertCircle },
+  medium: {
+    color: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    icon: Clock,
+  },
+  low: { color: "bg-blue-100 text-blue-800 border-blue-200", icon: Clock },
+};
+
 export default function TodoList() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchTodos() {
-      try {
-        const res = await fetch("/api/todos");
-        console.log("res", res);
-        const data = await res.json();
-        console.log("data", data);
-        setTodos(data.data);
-      } catch (error) {
-        console.error("Failed to fetch todos", error);
-      } finally {
-        setLoading(false);
-      }
+  // Fetch todos
+  const fetchTodos = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/todos");
+      const data = await res.json();
+      setTodos(data.data);
+    } catch (error) {
+      console.error("Failed to fetch todos", error);
+    } finally {
+      setLoading(false);
     }
+  };
 
+  useEffect(() => {
     fetchTodos();
   }, []);
 
-  if (loading) return <p className="p-4">Loading todos...</p>;
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+  const getPriorityConfig = (priority: string) => {
+    const normalizedPriority =
+      priority.toLowerCase() as keyof typeof priorityConfig;
+    return priorityConfig[normalizedPriority] || priorityConfig.medium;
+  };
+
+  // Toggle complete
+  const toggleComplete = async (id: string, completed: boolean) => {
+    try {
+      await fetch(`/api/todos/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed: !completed }),
+      });
+      fetchTodos(); // refresh after update
+    } catch (error) {
+      console.error("Failed to update todo", error);
+    }
+  };
+
+  // Delete todo
+  const deleteTodo = async (id: string) => {
+    try {
+      await fetch(`/api/todos/${id}`, { method: "DELETE" });
+      fetchTodos(); // refresh after delete
+    } catch (error) {
+      console.error("Failed to delete todo", error);
+    }
+  };
+
+  if (loading) return <TodoSkeleton />;
+
+  const completedCount = todos.filter((todo) => todo.completed).length;
+  const totalCount = todos.length;
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-semibold mb-4">My Todos</h2>
-      <ul className="space-y-2">
-        {todos.map((todo) => (
-          <li
-            key={todo._id}
-            className="flex items-center justify-between border p-3 rounded-lg shadow-sm"
-          >
-            <div>
-              <p className="font-medium">{todo.title}</p>
-              <p className="text-sm text-gray-500">
-                Priority: {todo.priority} |{" "}
-                {new Date(todo.createdAt).toLocaleDateString()}
-              </p>
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          My Todos
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          {completedCount} of {totalCount} tasks completed
+        </p>
+      </div>
+
+      {/* Progress Overview */}
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-200 dark:border-blue-800">
+        <CardContent className="p-6 flex justify-between items-center">
+          <div>
+            <h3 className="font-semibold text-blue-900 dark:text-blue-100">
+              Progress Overview
+            </h3>
+            <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+              Keep up the great work!
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+              {totalCount > 0
+                ? Math.round((completedCount / totalCount) * 100)
+                : 0}
+              %
             </div>
-            <span
-              className={`px-2 py-1 text-xs rounded ${
-                todo.completed
-                  ? "bg-green-200 text-green-800"
-                  : "bg-red-200 text-red-800"
-              }`}
-            >
-              {todo.completed ? "Done" : "Pending"}
-            </span>
-          </li>
-        ))}
-      </ul>
+            <div className="text-sm text-blue-700 dark:text-blue-300">
+              Complete
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Todos */}
+      <div className="space-y-4">
+        {todos.length === 0 ? (
+          <Card className="text-center py-12">
+            <CardContent>
+              <div className="text-gray-500 dark:text-gray-400">
+                <Clock className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">No todos yet</h3>
+                <p>Create your first todo to get started!</p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          todos.map((todo) => {
+            const priority = getPriorityConfig(todo.priority);
+            const PriorityIcon = priority.icon;
+
+            return (
+              <Card
+                key={todo._id}
+                className={`transition-all duration-200 hover:shadow-lg ${
+                  todo.completed
+                    ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
+                    : "hover:shadow-md"
+                }`}
+              >
+                <CardContent className="p-6 flex justify-between items-start">
+                  <div className="flex items-start gap-4 flex-1">
+                    <div
+                      className="mt-1 cursor-pointer"
+                      onClick={() => toggleComplete(todo._id, todo.completed)}
+                    >
+                      {todo.completed ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      ) : (
+                        <div className="h-5 w-5 rounded-full border-2 border-gray-300 dark:border-gray-600" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 space-y-2">
+                      <h3
+                        className={`font-medium text-lg ${
+                          todo.completed
+                            ? "text-green-800 dark:text-green-200 line-through"
+                            : "text-gray-900 dark:text-gray-100"
+                        }`}
+                      >
+                        {todo.title}
+                      </h3>
+
+                      <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center gap-1">
+                          <PriorityIcon className="h-4 w-4" />
+                          <Badge
+                            variant="secondary"
+                            className={`${priority.color} text-xs font-medium`}
+                          >
+                            {todo.priority.charAt(0).toUpperCase() +
+                              todo.priority.slice(1)}{" "}
+                            Priority
+                          </Badge>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>{formatDate(todo.createdAt)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2 items-end">
+                    <Badge
+                      variant={todo.completed ? "default" : "secondary"}
+                      className={
+                        todo.completed
+                          ? "bg-green-600 text-white hover:bg-green-700 cursor-pointer"
+                          : "bg-orange-100 text-orange-800 hover:bg-orange-200 dark:bg-orange-900 dark:text-orange-200 cursor-pointer"
+                      }
+                      onClick={() => toggleComplete(todo._id, todo.completed)}
+                    >
+                      {todo.completed ? "Completed" : "Pending"}
+                    </Badge>
+
+                    <Trash2
+                      className="h-5 w-5 text-red-600 hover:text-red-800 cursor-pointer"
+                      onClick={() => deleteTodo(todo._id)}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }
