@@ -5,15 +5,39 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function SimpleLoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Email:", email, "Password:", password);
-    // 🔥 You can add your login API call here
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast("Login failed: " + (data.error || "Invalid credentials"));
+        return;
+      }
+
+      localStorage.setItem("token", data.token);
+
+      toast("Login successful! Redirecting...");
+      router.push("/");
+    } catch (err) {
+      console.error(err);
+      toast("Something went wrong. Try again later.");
+    }
   };
 
   return (
@@ -59,9 +83,12 @@ export default function SimpleLoginForm() {
 
         <p className="text-center text-sm text-gray-600">
           Don&apos;t have an account?{" "}
-          <a href="#" className="font-medium underline hover:text-gray-800">
-            Sign up
-          </a>
+          <Link
+            href="/register"
+            className="font-medium underline hover:text-gray-800"
+          >
+            Sign Up
+          </Link>
         </p>
       </form>
     </div>

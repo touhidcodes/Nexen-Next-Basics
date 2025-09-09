@@ -23,8 +23,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth"; // make sure you have this hook
 
 interface MenuItem {
   title: string;
@@ -44,17 +44,6 @@ interface NavbarProps {
   };
 }
 
-// Mock function to get auth state (replace with your auth logic)
-const useAuth = () => {
-  const [user, setUser] = useState<{ name: string } | null>(null);
-  useEffect(() => {
-    // Example: fetch user from API or localStorage
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
-  }, []);
-  return user;
-};
-
 export const Navbar = ({
   logo = {
     url: "/",
@@ -65,20 +54,31 @@ export const Navbar = ({
   menu = [
     { title: "Home", url: "/" },
     { title: "ToDos", url: "/todos" },
-    { title: "Add", url: "/todos/create" },
-
+    { title: "Add", url: "/todos/create" }, // will be conditionally rendered
     { title: "Pricing", url: "/pricing" },
   ],
   auth = {
     login: { title: "Login", url: "/login" },
     signup: { title: "Sign up", url: "/signup" },
-    logout: { title: "Logout", url: "/logout" },
+    logout: { title: "Logout", url: "/login" }, // after logout push to login
   },
 }: NavbarProps) => {
   const pathname = usePathname();
-  const user = useAuth();
+  const router = useRouter();
+  const { isLoggedIn, user, setIsLoggedIn, setUser } = useAuth();
+
+  // Logout function
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    setUser(null);
+    router.push("/login");
+  };
 
   const renderMenuItem = (item: MenuItem) => {
+    // Skip "Add" if user not logged in
+    if (item.title === "Add" && !isLoggedIn) return null;
+
     if (item.items) {
       return (
         <NavigationMenuItem key={item.title}>
@@ -143,11 +143,16 @@ export const Navbar = ({
             </NavigationMenuList>
           </NavigationMenu>
 
-          <div className="flex gap-2">
-            {user ? (
-              <Button asChild variant="outline" size="sm">
-                <a href={auth.logout?.url}>{auth.logout?.title}</a>
-              </Button>
+          <div className="flex gap-2 items-center">
+            {isLoggedIn && user ? (
+              <>
+                <span className="text-gray-700">
+                  {user.name} ({user.email})
+                </span>
+                <Button onClick={handleLogout} variant="outline" size="sm">
+                  Logout
+                </Button>
+              </>
             ) : (
               <>
                 <Button asChild variant="outline" size="sm">
@@ -195,7 +200,7 @@ export const Navbar = ({
                 className="flex flex-col gap-2 p-4"
               >
                 {menu.map((item) =>
-                  item.items ? (
+                  item.title === "Add" && !isLoggedIn ? null : item.items ? (
                     <AccordionItem key={item.title} value={item.title}>
                       <AccordionTrigger>{item.title}</AccordionTrigger>
                       <AccordionContent>
@@ -231,9 +236,9 @@ export const Navbar = ({
               </Accordion>
 
               <div className="flex flex-col gap-2 p-4">
-                {user ? (
-                  <Button asChild variant="outline">
-                    <a href={auth.logout?.url}>{auth.logout?.title}</a>
+                {isLoggedIn && user ? (
+                  <Button onClick={handleLogout} variant="outline">
+                    Logout
                   </Button>
                 ) : (
                   <>

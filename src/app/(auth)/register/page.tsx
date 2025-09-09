@@ -5,15 +5,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
-export default function SimpleLoginForm() {
+export default function SimpleRegisterForm() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Email:", email, "Password:", password);
-    // 🔥 You can add your login API call here
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast(" Registration failed");
+        return;
+      }
+      localStorage.setItem("token", data.token);
+      router.push("/");
+      toast("Registered successfully! Redirecting...");
+    } catch (err) {
+      toast("Something went wrong. Try again later.");
+      console.log(err);
+    }
   };
 
   return (
@@ -29,6 +52,17 @@ export default function SimpleLoginForm() {
         </p>
         <h2 className="text-center text-xl font-semibold">Register</h2>
 
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            type="text"
+            placeholder="your name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+        </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -58,10 +92,13 @@ export default function SimpleLoginForm() {
         </Button>
 
         <p className="text-center text-sm text-gray-600">
-          Don&apos;t have an account?{" "}
-          <a href="#" className="font-medium underline hover:text-gray-800">
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className="font-medium underline hover:text-gray-800"
+          >
             Sign In
-          </a>
+          </Link>
         </p>
       </form>
     </div>
