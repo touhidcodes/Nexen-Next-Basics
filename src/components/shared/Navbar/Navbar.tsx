@@ -49,7 +49,7 @@ export const Navbar = ({
     url: "/",
     src: "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/logos/shadcnblockscom-icon.svg",
     alt: "logo",
-    title: "MyApp",
+    title: "Nexen Task",
   },
   menu = [
     { title: "Home", url: "/" },
