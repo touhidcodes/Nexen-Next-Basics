@@ -3,7 +3,6 @@ import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
   const token = req.cookies.get("token")?.value; // get JWT from cookie
-  console.log(token);
   const { pathname } = req.nextUrl;
 
   // If user is already logged in and tries to access login/signup, allow or redirect
