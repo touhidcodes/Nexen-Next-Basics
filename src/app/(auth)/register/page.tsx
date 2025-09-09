@@ -30,7 +30,6 @@ export default function SimpleRegisterForm() {
         toast(" Registration failed");
         return;
       }
-      localStorage.setItem("token", data.token);
       router.push("/");
       toast("Registered successfully! Redirecting...");
     } catch (err) {

@@ -24,7 +24,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { usePathname, useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth"; // make sure you have this hook
+import { useAuth } from "@/hooks/useAuth";
 
 interface MenuItem {
   title: string;
@@ -65,18 +65,21 @@ export const Navbar = ({
 }: NavbarProps) => {
   const pathname = usePathname();
   const router = useRouter();
-  const { isLoggedIn, user, setIsLoggedIn, setUser } = useAuth();
+  const { user, loading } = useAuth();
+
+  const isLoggedIn = !!user; // derived from user
 
   // Logout function
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setIsLoggedIn(false);
-    setUser(null);
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
   };
 
   const renderMenuItem = (item: MenuItem) => {
-    // Skip "Add" if user not logged in
     if (item.title === "Add" && !isLoggedIn) return null;
 
     if (item.items) {
@@ -123,6 +126,8 @@ export const Navbar = ({
     );
   };
 
+  if (loading) return null; // optionally show a spinner here
+
   return (
     <section className="py-4">
       <div className="container mx-auto">
@@ -144,10 +149,10 @@ export const Navbar = ({
           </NavigationMenu>
 
           <div className="flex gap-2 items-center">
-            {isLoggedIn && user ? (
+            {isLoggedIn ? (
               <>
                 <span className="text-gray-700">
-                  {user.name} ({user.email})
+                  {user?.name} ({user?.email})
                 </span>
                 <Button onClick={handleLogout} variant="outline" size="sm">
                   Logout
@@ -236,7 +241,7 @@ export const Navbar = ({
               </Accordion>
 
               <div className="flex flex-col gap-2 p-4">
-                {isLoggedIn && user ? (
+                {isLoggedIn ? (
                   <Button onClick={handleLogout} variant="outline">
                     Logout
                   </Button>

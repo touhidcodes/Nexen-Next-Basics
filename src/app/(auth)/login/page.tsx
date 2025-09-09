@@ -29,9 +29,6 @@ export default function SimpleLoginForm() {
         toast("Login failed: " + (data.error || "Invalid credentials"));
         return;
       }
-
-      localStorage.setItem("token", data.token);
-
       toast("Login successful! Redirecting...");
       router.push("/");
     } catch (err) {

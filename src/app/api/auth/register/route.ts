@@ -44,10 +44,20 @@ export async function POST(req: Request) {
       { expiresIn: "1d" }
     );
 
-    return NextResponse.json(
+    const res = NextResponse.json(
       { message: "User registered", token },
       { status: 201 }
     );
+
+    // set HTTP-only cookie
+    res.cookies.set("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24,
+    });
+
+    return res;
   } catch (error) {
     console.error(error);
     return NextResponse.json(

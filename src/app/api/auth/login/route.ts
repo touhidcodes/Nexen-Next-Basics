@@ -46,11 +46,21 @@ export async function POST(req: NextRequest) {
       { expiresIn: "1d" }
     );
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       message: "Login successful",
       token,
       user: { id: user._id, name: user.name, email: user.email },
     });
+
+    // set HTTP-only cookie
+    res.cookies.set("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24,
+    });
+
+    return res;
   } catch (error) {
     console.error("Error logging in:", error);
     return NextResponse.json(
